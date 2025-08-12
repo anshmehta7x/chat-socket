@@ -48,28 +48,7 @@ public class ChatServer {
         }
     }
 
-    private void handleClient(Socket clientSocket){
-        try{
-            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true); // auto-flush
-            String str = in.readLine();
-            if (str.equals(killCommand)){
-                ss.close();
-            }
-            else{
-                System.out.println("Received message : " + str);
-                out.println("Ack : " + str);
-                String authResult = this.authenticateClient(clientSocket,in,out);
-                if(!authResult.isEmpty()){
-                    clients.put(authResult, out);
-                }
-            }
-        }
-        catch (Exception e){
-            System.out.println("ERROR");
-        }
 
-    }
 
     String authenticateClient(Socket clientSocket, BufferedReader in, PrintWriter out){
         try{
@@ -89,6 +68,42 @@ public class ChatServer {
             // handle
             return "";
         }
+    }
+
+    private void handleClient(Socket clientSocket){
+        try{
+            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true); // auto-flush
+            String username = this.authenticateClient(clientSocket,in,out);
+
+            if (username.isEmpty()){
+                return;
+            }
+            else if(this.clients.containsKey(username)){
+                out.println("Can only connect from one client");
+                clientSocket.close();
+            }
+            else{
+                this.addClient(username,out);
+                String str;
+                while ((str = in.readLine()) != null) {
+                    if (str.equalsIgnoreCase(killCommand)) {
+                        out.println("Disconnecting...");
+                        break;
+                    }
+                    System.out.println("Received message from " + username + ": " + str);
+
+                    this.broadcast(str, username);
+                    out.println("Ack: " + str);
+                }
+
+
+            }
+        }
+        catch (Exception e){
+            System.out.println("ERROR");
+        }
+
     }
 
     void addClient(String username, PrintWriter out){
