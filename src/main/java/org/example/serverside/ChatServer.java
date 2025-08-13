@@ -92,9 +92,19 @@ public class ChatServer {
                         break;
                     }
                     System.out.println("Received message from " + username + ": " + str);
-                    this.broadcast(str, username);
-                }
 
+                    // Handle private messages starting with "@username "
+                    if (str.startsWith("@")) {
+                        int spaceIndex = str.indexOf(' ');
+                        if (spaceIndex > 1) {
+                            String receiver = str.substring(1, spaceIndex);
+                            String content = str.substring(spaceIndex + 1);
+                            privateMessage(content, username, receiver);
+                        }
+                    } else {
+                        broadcast(str, username);
+                    }
+                }
                 this.removeClient(username);
             }
         }
