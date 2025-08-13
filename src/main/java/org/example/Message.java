@@ -8,14 +8,27 @@ public class Message {
     String contents;
     boolean privateMessage;
 
-    public Message(String sender, String contents, boolean isPrivate){
+    public Message(String sender, String contents){
         this.messageDateTime = LocalDateTime.now();
         this.sender = sender;
         this.contents = contents;
-        this.privateMessage = isPrivate;
+        this.privateMessage = false;
+    }
+
+    public Message(String sender, String receiver, String contents){
+        this.messageDateTime = LocalDateTime.now();
+        this.sender = sender;
+        this.contents = contents;
+        this.privateMessage = true;
     }
 
     public String stringify(){
-        return this.messageDateTime.toString() + " " + this.sender + " " + this.contents;
+        String date = messageDateTime.toLocalDate().toString();
+        String time = messageDateTime.toLocalTime().toString();
+        if(this.privateMessage){
+            return "[PRIVATE] " + date + " " + time + " | " + this.sender + " : " + this.contents;
+
+        }
+        return date + " " + time + " | " + this.sender + " : " + this.contents;
     }
 }

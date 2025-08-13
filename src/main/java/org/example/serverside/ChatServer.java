@@ -13,7 +13,7 @@ public class ChatServer {
     final String killCommand = "QUIT";
     Authenticator auth = new Authenticator("users.csv");
     ServerSocket ss;
-    private ConcurrentHashMap<String, PrintWriter> clients = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, PrintWriter> clients = new ConcurrentHashMap<>();
 
 
     public ChatServer() {
@@ -52,8 +52,8 @@ public class ChatServer {
 
     String authenticateClient(Socket clientSocket, BufferedReader in, PrintWriter out){
         try{
-            out.println("Enter username and password (Space separated)");
-            String[] enteredCredentials = in.readLine().split(" ");
+            out.println("AUTH");
+            String[] enteredCredentials = in.readLine().split(":");
             if (!auth.checkCredential(enteredCredentials[0], enteredCredentials[1])){
                 out.println("Invalid Credentials, Disconnecting... ");
                 clientSocket.close();
@@ -75,7 +75,7 @@ public class ChatServer {
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true); // auto-flush
             String username = this.authenticateClient(clientSocket,in,out);
-
+            System.out.println(username + " has joined");
             if (username.isEmpty()){
                 return;
             }
@@ -92,12 +92,10 @@ public class ChatServer {
                         break;
                     }
                     System.out.println("Received message from " + username + ": " + str);
-
                     this.broadcast(str, username);
-                    out.println("Ack: " + str);
                 }
 
-
+                this.removeClient(username);
             }
         }
         catch (Exception e){
@@ -110,8 +108,12 @@ public class ChatServer {
         this.clients.put(username,out);
     }
 
+    void removeClient(String username){
+        this.clients.remove(username);
+    }
+
     void broadcast(String message, String sender){
-        Message msg = new Message(sender,message,false);
+        Message msg = new Message(sender,message);
         for (Map.Entry<String, PrintWriter> entry: clients.entrySet()){
             if(!entry.getKey().equals(sender)){
                 entry.getValue().println(msg.stringify());
@@ -120,7 +122,7 @@ public class ChatServer {
     }
 
     void privateMessage(String message, String sender, String receiver){
-        Message msg = new Message(sender,message,true);
+        Message msg = new Message(sender,receiver,message);
         for (Map.Entry<String, PrintWriter> entry: clients.entrySet()){
             if(entry.getKey().equals(receiver)){
                 entry.getValue().println(msg.stringify());

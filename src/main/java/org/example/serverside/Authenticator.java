@@ -44,9 +44,6 @@ class Authenticator {
         if(!this.credentials.containsKey(u)){
             return false;
         }
-        if(!this.credentials.get(u).equals(p)){
-            return false;
-        }
-        return true;
+        return this.credentials.get(u).equals(p);
     }
 }
